@@ -5,7 +5,7 @@ package main
 import (
 	"fmt"
 
-	tw "./timestamp_watcher"
+	tw "github.com/sunanana/timestamp_watcher"
 )
 
 func main() {
