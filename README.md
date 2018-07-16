@@ -9,12 +9,15 @@ import (
 )
 
 func main() {
-	ch := tw.Watch(&tw.WatchConfig{
+	ch, err := tw.Watch(&tw.WatchConfig{
 		IntervalSec:   3,
 		Target:        ".",
 		Ignore:        []string{".git", ".idea"},
 		IsPrintChange: true,
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	for range ch {
 		fmt.Println("Timestamp update.")

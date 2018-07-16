@@ -1,11 +1,13 @@
 package timestamp_watcher
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"time"
 )
 
@@ -22,7 +24,7 @@ var (
 )
 
 type WatchConfig struct {
-	IntervalSec       int
+	IntervalSec       uint
 	Target            string
 	Ignore            []string
 	IsPrintChange     bool
@@ -33,17 +35,18 @@ func init() {
 	m1, m2 = M{}, M{}
 }
 
-func Watch(t *WatchConfig) chan struct{} {
-	fInfo, err := os.Stat(t.Target)
-	if err != nil {
-		panic(err)
+func Watch(t *WatchConfig) (chan struct{}, error) {
+	if err := valid(t); err != nil {
+		return nil, err
 	}
+
+	fInfo, _ := os.Stat(t.Target)
 	targetIsDir = fInfo.IsDir()
 	ignore = t.Ignore
 
 	ch := make(chan struct{})
 	watch(t, ch)
-	return ch
+	return ch, nil
 }
 
 func watch(t *WatchConfig, ch chan struct{}) {
@@ -158,4 +161,23 @@ func printDiff(w io.Writer, t1, t2 M) {
 			fmt.Fprint(w, fmt.Sprintf("Modify: %s\n", k))
 		}
 	}
+}
+
+func valid(t *WatchConfig) error {
+	errs := []string{}
+	if t.IntervalSec == 0 {
+		errs = append(errs, "interval time should not be 0.")
+	}
+	if t.Target == "" {
+		errs = append(errs, "target should not be blank.")
+	} else {
+		if _, err := os.Stat(t.Target); err != nil {
+			errs = append(errs, fmt.Sprintf("not found target. Target: %s", t.Target))
+		}
+	}
+
+	if len(errs) != 0 {
+		return errors.New(strings.Join(errs, "\t"))
+	}
+	return nil
 }
